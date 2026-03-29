@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0da12e9939e872947ad06072373254e8, type: 3}
+  m_Name: Shotgun
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  weaponName: Shotgun
+  weaponType: 1
+  ammo: 4
+  fireRate: 0.8
+  range: 15
+  pelletsPerShot: 6
+  spreadAngle: 25
+  meleeRange: 2.5
+  meleeAngle: 120
+  throwForce: 12
+  throwDamageRange: 1
