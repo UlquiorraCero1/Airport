@@ -5,6 +5,10 @@ public class WeaponPickup : MonoBehaviour
     [Header("Weapon")]
     public WeaponData weaponData;
 
+    // Remembers remaining ammo when dropped
+    [HideInInspector]
+    public int remainingAmmo = -1; 
+
     private bool isEquipped = false;
     private bool isThrown = false;
     private bool hasHit = false;
@@ -70,7 +74,6 @@ public class WeaponPickup : MonoBehaviour
                              RigidbodyConstraints.FreezeRotationZ;
         }
 
-        // Re-enable player collision and switch back to trigger
         if (player != null)
         {
             Collider playerCol = player.GetComponent<Collider>();
@@ -98,8 +101,6 @@ public class WeaponPickup : MonoBehaviour
             col.enabled = true;
             col.isTrigger = false;
 
-            // Ignore collision with player so weapon doesn't
-            // immediately stop when thrown
             if (player != null)
             {
                 Collider playerCol = player.GetComponent<Collider>();
@@ -125,10 +126,13 @@ public class WeaponPickup : MonoBehaviour
         isThrown = false;
     }
 
-    public void OnDropped()
+    public void OnDropped(int currentAmmo)
     {
         isEquipped = false;
         pickupDelay = 0.5f;
+
+        // Save the ammo so it's not reset on pickup
+        remainingAmmo = currentAmmo;
 
         if (col != null)
             col.isTrigger = true;
@@ -163,10 +167,7 @@ public class WeaponPickup : MonoBehaviour
     void OnCollisionEnter(Collision collision)
     {
         if (!isThrown) return;
-
-        // Don't stop on player collision
         if (collision.gameObject.CompareTag("Player")) return;
-
         StopThrown();
     }
 }

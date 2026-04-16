@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 public class EnemyHealth : MonoBehaviour
 {
@@ -6,6 +7,9 @@ public class EnemyHealth : MonoBehaviour
     public bool isKnockedDown = false;
 
     public GameObject bloodPrefab;
+
+    // ← NEW: Room listens to this
+    public Action onDeath;
 
     private bool isDead = false;
     private EnemyAI ai;
@@ -24,13 +28,13 @@ public class EnemyHealth : MonoBehaviour
     {
         if (isDead || isKnockedDown) return;
 
-        // Dogs die instantly — no knockdown
         DogEnemy dog = GetComponent<DogEnemy>();
         if (dog != null)
         {
             isDead = true;
             SpawnBlood(transform.position);
             GameUI.Instance?.RegisterKill();
+            onDeath?.Invoke();
             dog.Die();
             return;
         }
@@ -49,10 +53,11 @@ public class EnemyHealth : MonoBehaviour
 
         SpawnBlood(transform.position);
         SpawnBlood(transform.position + new Vector3(
-            Random.Range(-0.6f, 0.6f), 0,
-            Random.Range(-0.6f, 0.6f)));
+            UnityEngine.Random.Range(-0.6f, 0.6f), 0,
+            UnityEngine.Random.Range(-0.6f, 0.6f)));
 
         GameUI.Instance?.RegisterKill();
+        onDeath?.Invoke();
         Destroy(gameObject, 0.05f);
     }
 
@@ -63,12 +68,12 @@ public class EnemyHealth : MonoBehaviour
 
         SpawnBlood(transform.position);
         SpawnBlood(transform.position + new Vector3(
-            Random.Range(-0.4f, 0.4f), 0,
-            Random.Range(-0.4f, 0.4f)));
+            UnityEngine.Random.Range(-0.4f, 0.4f), 0,
+            UnityEngine.Random.Range(-0.4f, 0.4f)));
 
         GameUI.Instance?.RegisterKill();
+        onDeath?.Invoke();
 
-        // Stop dog movement if it's a dog
         DogEnemy dog = GetComponent<DogEnemy>();
         if (dog != null) dog.Die();
 
@@ -80,6 +85,6 @@ public class EnemyHealth : MonoBehaviour
         if (bloodPrefab == null) return;
         Vector3 pos = new Vector3(position.x, 0.02f, position.z);
         Instantiate(bloodPrefab, pos,
-            Quaternion.Euler(90f, Random.Range(0f, 360f), 0f));
+            Quaternion.Euler(90f, UnityEngine.Random.Range(0f, 360f), 0f));
     }
 }

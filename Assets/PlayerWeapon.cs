@@ -8,6 +8,7 @@ public class PlayerWeapon : MonoBehaviour
     public LayerMask enemyLayer;
     public LayerMask wallLayer;
     public GameObject bloodPrefab;
+    public GameObject bulletTracerPrefab;
 
     [Header("Current Weapon (read only)")]
     public WeaponData equippedWeapon;
@@ -31,74 +32,93 @@ public class PlayerWeapon : MonoBehaviour
         var keyboard = Keyboard.current;
         if (mouse == null || keyboard == null) return;
 
-        if (mouse.leftButton.wasPressedThisFrame)
+        if (equippedWeapon != null)
         {
-            if (equippedWeapon == null) return;
+            bool isMelee = equippedWeapon.weaponType == WeaponType.MeleeWeapon;
+            bool isUzi   = equippedWeapon.weaponType == WeaponType.Uzi;
 
-            if (equippedWeapon.weaponType == WeaponType.MeleeWeapon)
-                MeleeAttack();
+            if (!isMelee)
+            {
+                bool shouldShoot = isUzi
+                    ? mouse.leftButton.isPressed
+                    : mouse.leftButton.wasPressedThisFrame;
+
+                if (shouldShoot)
+                    Shoot();
+            }
             else
-                Shoot();
-        }
+            {
+                if (mouse.leftButton.wasPressedThisFrame)
+                    MeleeAttack();
+            }
 
-        if (keyboard.fKey.wasPressedThisFrame && equippedWeapon != null)
-            ThrowWeapon();
+            if (keyboard.fKey.wasPressedThisFrame)
+                ThrowWeapon();
+        }
     }
 
     // ─── EQUIP ────────────────────────────────────────────
     public void EquipWeapon(WeaponPickup pickup)
-{
-    if (heldPickup != null)
-        DropCurrentWeapon();
+    {
+        if (heldPickup != null)
+            DropCurrentWeapon();
 
-    equippedWeapon = pickup.weaponData;
-    currentAmmo = equippedWeapon.ammo;
-    heldPickup = pickup;
+        equippedWeapon = pickup.weaponData;
 
-    pickup.transform.SetParent(weaponHoldPoint);
-    pickup.transform.localPosition = Vector3.zero;
-    pickup.transform.localRotation = Quaternion.identity;
+        // Use saved ammo if available, otherwise full ammo
+        currentAmmo = pickup.remainingAmmo >= 0
+            ? pickup.remainingAmmo
+            : equippedWeapon.ammo;
 
-    // Disable collider and physics while held
-    Collider col = pickup.GetComponent<Collider>();
-    if (col != null) col.enabled = false;
+        heldPickup = pickup;
 
-    Rigidbody rb = pickup.GetComponent<Rigidbody>();
-    if (rb != null) rb.isKinematic = true;
+        pickup.transform.SetParent(weaponHoldPoint);
+        pickup.transform.localPosition = Vector3.zero;
+        pickup.transform.localRotation = Quaternion.identity;
 
-    // Mark as equipped so it won't re-trigger
-    pickup.OnEquipped();
+        Collider col = pickup.GetComponent<Collider>();
+        if (col != null) col.enabled = false;
 
-    if (playerCombat != null)
-        playerCombat.hasWeapon = true;
+        Rigidbody rb = pickup.GetComponent<Rigidbody>();
+        if (rb != null) rb.isKinematic = true;
 
-    GameUI.Instance?.UpdateAmmo(currentAmmo, equippedWeapon.ammo, equippedWeapon.weaponName);
-}
+        pickup.OnEquipped();
 
-void DropCurrentWeapon()
-{
-    if (heldPickup == null) return;
+        if (playerCombat != null)
+            playerCombat.hasWeapon = true;
 
-    heldPickup.transform.SetParent(null);
+        if (equippedWeapon.weaponType == WeaponType.MeleeWeapon)
+            GameUI.Instance?.ShowMeleeWeapon(equippedWeapon.weaponName);
+        else
+            GameUI.Instance?.UpdateAmmo(currentAmmo, equippedWeapon.ammo,
+                equippedWeapon.weaponName);
+    }
 
-    Collider col = heldPickup.GetComponent<Collider>();
-    if (col != null) col.enabled = true;
+    // ─── DROP ─────────────────────────────────────────────
+    void DropCurrentWeapon()
+    {
+        if (heldPickup == null) return;
 
-    Rigidbody rb = heldPickup.GetComponent<Rigidbody>();
-    if (rb != null) rb.isKinematic = false;
+        heldPickup.transform.SetParent(null);
 
-    // Mark as dropped with delay so player doesn't instantly re-pickup
-    heldPickup.OnDropped();
+        Collider col = heldPickup.GetComponent<Collider>();
+        if (col != null) col.enabled = true;
 
-    heldPickup = null;
-    equippedWeapon = null;
-    currentAmmo = 0;
+        Rigidbody rb = heldPickup.GetComponent<Rigidbody>();
+        if (rb != null) rb.isKinematic = false;
 
-    if (playerCombat != null)
-        playerCombat.hasWeapon = false;
+        // Save current ammo so player can pick it back up
+        heldPickup.OnDropped(currentAmmo);
 
-    GameUI.Instance?.ClearWeapon();
-}
+        heldPickup = null;
+        equippedWeapon = null;
+        currentAmmo = 0;
+
+        if (playerCombat != null)
+            playerCombat.hasWeapon = false;
+
+        GameUI.Instance?.ClearWeapon();
+    }
 
     // ─── SHOOT ────────────────────────────────────────────
     void Shoot()
@@ -108,84 +128,72 @@ void DropCurrentWeapon()
         if (currentAmmo <= 0)
         {
             DropCurrentWeapon();
-            Debug.Log("Out of ammo!");
             return;
         }
 
         fireTimer = equippedWeapon.fireRate;
         currentAmmo--;
 
-        // Update ammo UI
-        GameUI.Instance?.UpdateAmmo(currentAmmo, equippedWeapon.ammo, equippedWeapon.weaponName);
+        GameUI.Instance?.UpdateAmmo(currentAmmo, equippedWeapon.ammo,
+            equippedWeapon.weaponName);
 
         for (int i = 0; i < equippedWeapon.pelletsPerShot; i++)
             FireRaycast();
     }
 
     void FireRaycast()
-{
-    Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-    Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-    Vector3 shootDirection = transform.forward;
-
-    if (groundPlane.Raycast(ray, out float dist))
     {
-        Vector3 mouseWorld = ray.GetPoint(dist);
-        shootDirection = (mouseWorld - transform.position).normalized;
-        shootDirection.y = 0;
-    }
+        Vector3 shootDirection = transform.forward;
 
-    if (equippedWeapon.spreadAngle > 0f)
-    {
-        float spread = equippedWeapon.spreadAngle;
-        shootDirection = Quaternion.Euler(0,
-            Random.Range(-spread, spread), 0) * shootDirection;
-    }
+        if (equippedWeapon.spreadAngle > 0f)
+        {
+            shootDirection = Quaternion.Euler(0,
+                Random.Range(-equippedWeapon.spreadAngle,
+                              equippedWeapon.spreadAngle), 0) * shootDirection;
+        }
 
-    Vector3 origin = transform.position + Vector3.up * 0.5f;
+        Vector3 origin   = transform.position + Vector3.up * 0.5f;
+        Vector3 hitPoint = origin + shootDirection * equippedWeapon.range;
 
-    // Cast with NO layer mask — hits absolutely everything
-    RaycastHit[] allHits = Physics.RaycastAll(origin, shootDirection, equippedWeapon.range, ~0, QueryTriggerInteraction.Collide);
+        RaycastHit[] allHits = Physics.RaycastAll(
+            origin, shootDirection, equippedWeapon.range,
+            ~0, QueryTriggerInteraction.Collide);
 
-    if (allHits.Length == 0)
-    {
-        Debug.Log("Ray hit NOTHING at all");
-    }
-    else
-    {
         foreach (RaycastHit h in allHits)
         {
-            Debug.Log("Ray hit: " + h.collider.gameObject.name 
-                + " | Layer: " + h.collider.gameObject.layer
-                + " | IsTrigger: " + h.collider.isTrigger
-                + " | HasEnemyHealth: " + (h.collider.GetComponent<EnemyHealth>() != null));
-
             EnemyHealth eh = h.collider.GetComponent<EnemyHealth>();
             if (eh != null)
             {
                 eh.TakeShot();
                 SpawnBlood(h.point);
+                hitPoint = h.point;
                 break;
             }
         }
+
+        SpawnTracer(origin, hitPoint);
+        AlertSystem.Instance?.ReportSound(transform.position, 20f);
     }
 
-    AlertSystem.Instance?.ReportSound(transform.position, 20f);
-    Debug.DrawRay(origin, shootDirection * equippedWeapon.range, Color.red, 1f);
-}
+    void SpawnTracer(Vector3 from, Vector3 to)
+    {
+        if (bulletTracerPrefab == null) return;
+        GameObject tracer = Instantiate(bulletTracerPrefab, from, Quaternion.identity);
+        BulletTracer bt = tracer.GetComponent<BulletTracer>();
+        if (bt != null)
+            bt.Setup(from, to);
+    }
 
     // ─── MELEE WEAPON ─────────────────────────────────────
     void MeleeAttack()
     {
         Collider[] hits = Physics.OverlapSphere(
-            transform.position,
-            equippedWeapon.meleeRange,
-            enemyLayer);
+            transform.position, equippedWeapon.meleeRange, enemyLayer);
 
         foreach (Collider hit in hits)
         {
-            Vector3 dir = (hit.transform.position - transform.position).normalized;
-            float angle = Vector3.Angle(transform.forward, dir);
+            Vector3 dir   = (hit.transform.position - transform.position).normalized;
+            float   angle = Vector3.Angle(transform.forward, dir);
 
             if (angle < equippedWeapon.meleeAngle / 2f)
             {
@@ -208,32 +216,36 @@ void DropCurrentWeapon()
 
     // ─── THROW ────────────────────────────────────────────
     void ThrowWeapon()
-{
-    if (heldPickup == null) return;
+    {
+        if (heldPickup == null) return;
 
-    heldPickup.transform.SetParent(null);
+        WeaponPickup toThrow   = heldPickup;
+        int          savedAmmo = currentAmmo;
 
-    Rigidbody rb = heldPickup.GetComponent<Rigidbody>();
-    if (rb != null) rb.isKinematic = false;
+        // Clear player hands immediately
+        heldPickup      = null;
+        equippedWeapon  = null;
+        currentAmmo     = 0;
 
-    Collider col = heldPickup.GetComponent<Collider>();
-    if (col != null) col.enabled = true;
+        if (playerCombat != null)
+            playerCombat.hasWeapon = false;
 
-    Vector3 throwDir = transform.forward;
+        GameUI.Instance?.ClearWeapon();
 
-    // Throw with high force
-    heldPickup.SetThrown(throwDir, 30f);
+        // Detach from player
+        toThrow.transform.SetParent(null);
 
-    heldPickup = null;
-    equippedWeapon = null;
-    currentAmmo = 0;
+        Rigidbody rb = toThrow.GetComponent<Rigidbody>();
+        if (rb != null) rb.isKinematic = false;
 
-    if (playerCombat != null)
-        playerCombat.hasWeapon = false;
+        // Save remaining ammo so pickup restores it if picked up again
+        toThrow.remainingAmmo = savedAmmo;
 
-    GameUI.Instance?.ClearWeapon();
-}
+        // Launch it
+        toThrow.SetThrown(transform.forward, 30f);
+    }
 
+    // ─── HELPERS ──────────────────────────────────────────
     void SpawnBlood(Vector3 position)
     {
         if (bloodPrefab == null) return;

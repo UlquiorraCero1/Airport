@@ -5,17 +5,20 @@ public class ScreenShake : MonoBehaviour
 {
     public static ScreenShake Instance;
 
-    private Vector3 originalPos;
+    private Vector3 shakeOffset = Vector3.zero;
 
     void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
-
-        originalPos = transform.localPosition;
     }
 
-    public void Shake(float duration = 0.15f, float magnitude = 0.3f)
+    public Vector3 GetShakeOffset()
+    {
+        return shakeOffset;
+    }
+
+    public void Shake(float duration = 0.1f, float magnitude = 0.15f)
     {
         StopAllCoroutines();
         StartCoroutine(DoShake(duration, magnitude));
@@ -30,15 +33,13 @@ public class ScreenShake : MonoBehaviour
             float x = Random.Range(-1f, 1f) * magnitude;
             float z = Random.Range(-1f, 1f) * magnitude;
 
-            transform.localPosition = new Vector3(
-                originalPos.x + x,
-                originalPos.y,
-                originalPos.z + z);
+            // Only X and Z — no Y dipping ever
+            shakeOffset = new Vector3(x, 0f, z);
 
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
 
-        transform.localPosition = originalPos;
+        shakeOffset = Vector3.zero;
     }
 }

@@ -1,10 +1,8 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
-    // This lets any script access GameManager from anywhere
     public static GameManager Instance;
 
     [Header("Settings")]
@@ -12,20 +10,18 @@ public class GameManager : MonoBehaviour
 
     void Awake()
     {
-        if (Instance == null)
-            Instance = this;
-        else
-            Destroy(gameObject);
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
     public void PlayerDied()
     {
-        StartCoroutine(RestartAfterDelay());
+        StartCoroutine(ShowGameOverAfterDelay());
     }
 
-    IEnumerator RestartAfterDelay()
+    IEnumerator ShowGameOverAfterDelay()
     {
         yield return new WaitForSeconds(deathRestartDelay);
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        GameOverScreen.Instance?.ShowGameOver();
     }
 }

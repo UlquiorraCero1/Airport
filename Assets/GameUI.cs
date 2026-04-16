@@ -18,8 +18,6 @@ public class GameUI : MonoBehaviour
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
-
-        // Hide everything at start
         HideAll();
     }
 
@@ -40,7 +38,7 @@ public class GameUI : MonoBehaviour
         }
     }
 
-    // Called when player picks up a weapon
+    // For guns — show ammo and name
     public void UpdateAmmo(int current, int max, string weaponName)
     {
         if (ammoText != null)
@@ -48,6 +46,18 @@ public class GameUI : MonoBehaviour
             ammoText.gameObject.SetActive(true);
             ammoText.text = current + " / " + max;
         }
+        if (weaponNameText != null)
+        {
+            weaponNameText.gameObject.SetActive(true);
+            weaponNameText.text = weaponName.ToUpper();
+        }
+    }
+
+    // For melee — show name only, hide ammo
+    public void ShowMeleeWeapon(string weaponName)
+    {
+        if (ammoText != null)
+            ammoText.gameObject.SetActive(false);
 
         if (weaponNameText != null)
         {
@@ -56,18 +66,17 @@ public class GameUI : MonoBehaviour
         }
     }
 
-    // Called when player drops or runs out of ammo
     public void ClearWeapon()
     {
         if (ammoText != null)       ammoText.gameObject.SetActive(false);
         if (weaponNameText != null) weaponNameText.gameObject.SetActive(false);
     }
 
-    // Called on every kill
     public void RegisterKill()
     {
         killCombo++;
         comboTimer = comboWindow;
+        GameOverScreen.AddKill();
 
         if (comboText != null)
         {
@@ -79,7 +88,7 @@ public class GameUI : MonoBehaviour
             }
         }
 
-        ScreenShake.Instance?.Shake(0.12f, 0.25f);
+        ScreenShake.Instance?.Shake(0.15f, 0.5f);
         SlowMotion.Instance?.TriggerKillEffect();
     }
 

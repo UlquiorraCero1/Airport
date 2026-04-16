@@ -67,14 +67,25 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    public void TakeDamage()
-    {
-        if (isDead) return;
-        isDead = true;
-        SpawnBlood(transform.position);
-        GameManager.Instance.PlayerDied();
-        GetComponent<Renderer>().enabled = false;
-    }
+  public void TakeDamage()
+{
+    if (isDead) return;
+    isDead = true;
+
+    SpawnBlood(transform.position);
+
+    // Disable movement and weapon scripts
+    PlayerMovement pm = GetComponent<PlayerMovement>();
+    if (pm != null) pm.enabled = false;
+
+    PlayerWeapon pw = GetComponent<PlayerWeapon>();
+    if (pw != null) pw.enabled = false;
+
+    // Hide the player
+    GetComponent<Renderer>().enabled = false;
+
+    GameManager.Instance.PlayerDied();
+}
 
     void SpawnBlood(Vector3 position)
     {
