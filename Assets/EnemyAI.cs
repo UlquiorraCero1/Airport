@@ -15,7 +15,7 @@ public class EnemyAI : MonoBehaviour
     [Header("Detection")]
     public float sightRange = 10f;
     public float sightAngle = 100f;
-    public float hearingRange = 15f;    // ← NEW: radius to hear gunshots
+    public float hearingRange = 15f;
 
     [Header("Chase & Attack")]
     public float chaseSpeed = 5f;
@@ -23,7 +23,7 @@ public class EnemyAI : MonoBehaviour
     public float attackCooldown = 1f;
 
     [HideInInspector]
-    public Vector3 lastKnownSoundPos;   // ← NEW: where the shot came from
+    public Vector3 lastKnownSoundPos;
 
     private Transform player;
     private int patrolIndex = 0;
@@ -89,7 +89,6 @@ public class EnemyAI : MonoBehaviour
         }
         else
         {
-            // Reached the sound location — wait and look around
             waitTimer += Time.deltaTime;
             if (waitTimer > 3f)
             {
@@ -163,7 +162,6 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    // ← NEW: Called by AlertSystem when a shot is fired nearby
     public void HearSound(Vector3 soundPosition)
     {
         if (currentState == State.Chase || currentState == State.Attack) return;

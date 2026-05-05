@@ -8,7 +8,6 @@ public class EnemyHealth : MonoBehaviour
 
     public GameObject bloodPrefab;
 
-    // ← NEW: Room listens to this
     public Action onDeath;
 
     private bool isDead = false;

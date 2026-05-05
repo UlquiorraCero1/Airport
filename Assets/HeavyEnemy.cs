@@ -17,8 +17,6 @@ public class HeavyEnemy : MonoBehaviour
         if (rend != null)
             rend.material.color = new Color(0.4f, 0.1f, 0.1f);
     }
-
-    // Called instead of TakeHit for heavy enemies
     public void TakeHeavyHit()
     {
         hitCount++;

@@ -20,7 +20,6 @@ public class DogEnemy : MonoBehaviour
 
         rend = GetComponent<Renderer>();
 
-        // Brown color only — no scaling, keeps collider working correctly
         if (rend != null)
             rend.material.color = new Color(0.55f, 0.35f, 0.1f);
     }

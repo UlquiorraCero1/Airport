@@ -33,7 +33,7 @@ public class ScreenShake : MonoBehaviour
             float x = Random.Range(-1f, 1f) * magnitude;
             float z = Random.Range(-1f, 1f) * magnitude;
 
-            // Only X and Z — no Y dipping ever
+            // Only X and Z
             shakeOffset = new Vector3(x, 0f, z);
 
             elapsed += Time.unscaledDeltaTime;

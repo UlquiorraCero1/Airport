@@ -26,14 +26,12 @@ public class Door : MonoBehaviour
         leftClosed  = leftDoor.transform.position;
         rightClosed = rightDoor.transform.position;
 
-        // Open positions slide away from each other
         leftOpen  = leftClosed  + Vector3.left  * slideDistance;
         rightOpen = rightClosed + Vector3.right * slideDistance;
 
         leftCol  = leftDoor.GetComponent<Collider>();
         rightCol = rightDoor.GetComponent<Collider>();
 
-        // Start open so player can enter
         OpenDoor();
     }
 

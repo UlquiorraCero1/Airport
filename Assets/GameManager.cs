@@ -21,7 +21,7 @@ public class GameManager : MonoBehaviour
 
     IEnumerator ShowGameOverAfterDelay()
     {
-        yield return new WaitForSeconds(deathRestartDelay);
+        yield return new WaitForSecondsRealtime(deathRestartDelay);
         GameOverScreen.Instance?.ShowGameOver();
     }
 }

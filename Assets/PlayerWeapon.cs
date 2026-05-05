@@ -57,7 +57,7 @@ public class PlayerWeapon : MonoBehaviour
         }
     }
 
-    // ─── EQUIP ────────────────────────────────────────────
+    // EQUIP
     public void EquipWeapon(WeaponPickup pickup)
     {
         if (heldPickup != null)
@@ -94,7 +94,7 @@ public class PlayerWeapon : MonoBehaviour
                 equippedWeapon.weaponName);
     }
 
-    // ─── DROP ─────────────────────────────────────────────
+    // DROP
     void DropCurrentWeapon()
     {
         if (heldPickup == null) return;
@@ -120,7 +120,7 @@ public class PlayerWeapon : MonoBehaviour
         GameUI.Instance?.ClearWeapon();
     }
 
-    // ─── SHOOT ────────────────────────────────────────────
+    // SHOOT
     void Shoot()
     {
         if (fireTimer > 0f) return;
@@ -160,16 +160,27 @@ public class PlayerWeapon : MonoBehaviour
             ~0, QueryTriggerInteraction.Collide);
 
         foreach (RaycastHit h in allHits)
-        {
-            EnemyHealth eh = h.collider.GetComponent<EnemyHealth>();
-            if (eh != null)
-            {
-                eh.TakeShot();
-                SpawnBlood(h.point);
-                hitPoint = h.point;
-                break;
-            }
-        }
+{
+    // Check for boss first
+    BossAI boss = h.collider.GetComponent<BossAI>();
+    if (boss != null)
+    {
+        boss.TakeHit();
+        SpawnBlood(h.point);
+        hitPoint = h.point;
+        break;
+    }
+
+    // Then check normal enemy
+    EnemyHealth eh = h.collider.GetComponent<EnemyHealth>();
+    if (eh != null)
+    {
+        eh.TakeShot();
+        SpawnBlood(h.point);
+        hitPoint = h.point;
+        break;
+    }
+    }
 
         SpawnTracer(origin, hitPoint);
         AlertSystem.Instance?.ReportSound(transform.position, 20f);
@@ -184,7 +195,7 @@ public class PlayerWeapon : MonoBehaviour
             bt.Setup(from, to);
     }
 
-    // ─── MELEE WEAPON ─────────────────────────────────────
+    // MELEE WEAPON
     void MeleeAttack()
     {
         Collider[] hits = Physics.OverlapSphere(
@@ -214,7 +225,7 @@ public class PlayerWeapon : MonoBehaviour
         }
     }
 
-    // ─── THROW ────────────────────────────────────────────
+    // THROW 
     void ThrowWeapon()
     {
         if (heldPickup == null) return;
@@ -245,7 +256,7 @@ public class PlayerWeapon : MonoBehaviour
         toThrow.SetThrown(transform.forward, 30f);
     }
 
-    // ─── HELPERS ──────────────────────────────────────────
+    // HELPERS 
     void SpawnBlood(Vector3 position)
     {
         if (bloodPrefab == null) return;

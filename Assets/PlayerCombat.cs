@@ -10,7 +10,7 @@ public class PlayerCombat : MonoBehaviour
     public GameObject bloodPrefab;
 
     [HideInInspector]
-    public bool hasWeapon = false;    // ← NEW
+    public bool hasWeapon = false;    
 
     private bool isDead = false;
 
@@ -19,7 +19,7 @@ public class PlayerCombat : MonoBehaviour
         if (isDead) return;
 
         // Only punch with fists if no weapon equipped
-        if (hasWeapon) return;        // ← NEW
+        if (hasWeapon) return;        
 
         var mouse = Mouse.current;
         if (mouse == null) return;
@@ -31,41 +31,58 @@ public class PlayerCombat : MonoBehaviour
     }
 
     void TryAttack()
+{
+    Collider[] hits = Physics.OverlapSphere(transform.position, attackRange, enemyLayer);
+
+    EnemyHealth closestEnemy = null;
+    BossAI closestBoss = null;
+    float closestDist = Mathf.Infinity;
+
+    foreach (Collider hit in hits)
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, attackRange, enemyLayer);
+        Vector3 dirToEnemy = (hit.transform.position - transform.position).normalized;
+        float angle = Vector3.Angle(transform.forward, dirToEnemy);
 
-        EnemyHealth closestEnemy = null;
-        float closestDist = Mathf.Infinity;
-
-        foreach (Collider hit in hits)
+        if (angle < attackAngle / 2f)
         {
-            Vector3 dirToEnemy = (hit.transform.position - transform.position).normalized;
-            float angle = Vector3.Angle(transform.forward, dirToEnemy);
-
-            if (angle < attackAngle / 2f)
+            float dist = Vector3.Distance(transform.position, hit.transform.position);
+            if (dist < closestDist)
             {
-                float dist = Vector3.Distance(transform.position, hit.transform.position);
-                if (dist < closestDist)
-                {
-                    closestDist = dist;
-                    closestEnemy = hit.GetComponent<EnemyHealth>();
-                }
-            }
-        }
-
-        if (closestEnemy != null)
-        {
-            if (closestEnemy.isKnockedDown)
-            {
-                closestEnemy.Execute();
-                SpawnBlood(closestEnemy.transform.position);
-            }
-            else
-            {
-                closestEnemy.TakeHit();
+                closestDist = dist;
+                closestEnemy = hit.GetComponent<EnemyHealth>();
+                closestBoss  = hit.GetComponent<BossAI>();
             }
         }
     }
+
+    // Hit boss
+    if (closestBoss != null)
+    {
+        closestBoss.TakeHit();
+        SpawnBlood(closestBoss.transform.position);
+        return;
+    }
+
+    // Hit normal enemy
+    if (closestEnemy != null)
+    {
+        if (closestEnemy.isKnockedDown)
+        {
+            closestEnemy.Execute();
+            SpawnBlood(closestEnemy.transform.position);
+        }
+        else
+        {
+            HeavyEnemy heavy = closestEnemy.GetComponent<HeavyEnemy>();
+            if (heavy != null)
+                heavy.TakeHeavyHit();
+            else
+                closestEnemy.TakeHit();
+
+            SpawnBlood(closestEnemy.transform.position);
+        }
+    }
+}
 
   public void TakeDamage()
 {

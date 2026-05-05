@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 
 public class GameOverScreen : MonoBehaviour
 {
@@ -11,18 +13,17 @@ public class GameOverScreen : MonoBehaviour
     public TextMeshProUGUI killCountText;
 
     private static int totalKills = 0;
-
     public static GameOverScreen Instance;
 
     void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
-    }
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
 
-    void Start()
-    {
-        Time.timeScale = 1f;
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
     }
@@ -40,11 +41,16 @@ public class GameOverScreen : MonoBehaviour
         if (killCountText != null)
             killCountText.text = "KILLS: " + totalKills;
 
-        // Pause the game
+        var inputModule = FindObjectOfType<InputSystemUIInputModule>();
+        if (inputModule != null)
+            inputModule.enabled = true;
+
+            Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
         Time.timeScale = 0f;
     }
 
-    // Called by Retry button
     public void Retry()
     {
         totalKills = 0;
@@ -52,7 +58,6 @@ public class GameOverScreen : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    // Called by Main Menu button
     public void GoToMainMenu()
     {
         totalKills = 0;
