@@ -31,7 +31,6 @@ public class BulletTracer : MonoBehaviour
     {
         timer += Time.deltaTime;
 
-        // Only fade in the last 30% of lifetime
         float fadeStart = lifetime * 0.7f;
         float alpha = timer < fadeStart
             ? 1f
@@ -45,7 +44,7 @@ public class BulletTracer : MonoBehaviour
             lr.SetPosition(0, tail);
             lr.SetPosition(1, currentPos);
             lr.startWidth = 0.12f * alpha;
-            lr.endWidth   = 0.06f * alpha;
+            lr.endWidth = 0.06f * alpha;
         }
 
         if (timer >= lifetime)

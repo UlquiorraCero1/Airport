@@ -14,11 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   weaponName: Uzi
   weaponType: 2
+  ammoType: 1
+  magazineSize: 30
+  reloadTime: 1.2
+  canReload: 1
   ammo: 30
   fireRate: 0.08
   range: 20
   pelletsPerShot: 1
   spreadAngle: 5
+  recoilStrength: 0.3
+  muzzleFlashSize: 1
+  shellEjectForce: 3
+  screenShakeOnFire: 0.08
+  soundRadius: 20
   meleeRange: 2.5
   meleeAngle: 120
   throwForce: 10

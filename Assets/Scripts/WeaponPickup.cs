@@ -5,9 +5,13 @@ public class WeaponPickup : MonoBehaviour
     [Header("Weapon")]
     public WeaponData weaponData;
 
-    // Remembers remaining ammo when dropped
     [HideInInspector]
-    public int remainingAmmo = -1; 
+    public int remainingAmmo = -1;
+
+    [Header("Visual")]
+    public float bobSpeed = 1.5f;
+    public float bobHeight = 0.1f;
+    public bool enableBobbing = true;
 
     private bool isEquipped = false;
     private bool isThrown = false;
@@ -17,13 +21,17 @@ public class WeaponPickup : MonoBehaviour
     private Collider col;
     private float groundY = 0f;
     private GameObject player;
+    private Vector3 startPosition;
+    private float bobTimer = 0f;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         col = GetComponent<Collider>();
         groundY = transform.position.y;
+        startPosition = transform.position;
         player = GameObject.FindGameObjectWithTag("Player");
+        bobTimer = Random.Range(0f, Mathf.PI * 2f);
 
         if (rb != null)
         {
@@ -40,6 +48,15 @@ public class WeaponPickup : MonoBehaviour
 
         if (isThrown && !hasHit)
             CheckThrowHit();
+
+        if (!isEquipped && !isThrown && enableBobbing)
+        {
+            bobTimer += Time.deltaTime * bobSpeed;
+            float yOffset = Mathf.Sin(bobTimer) * bobHeight;
+            Vector3 pos = transform.position;
+            pos.y = groundY + yOffset;
+            transform.position = pos;
+        }
     }
 
     void CheckThrowHit()
@@ -54,7 +71,21 @@ public class WeaponPickup : MonoBehaviour
             if (eh != null)
             {
                 StopThrown();
+
+                Vector3 hitDir = (hit.transform.position - transform.position).normalized;
+                eh.SetLastHitDirection(hitDir);
                 eh.TakeShot();
+
+                HitMarker.Create(hit.transform.position, true);
+                return;
+            }
+
+            BossAI boss = hit.GetComponent<BossAI>();
+            if (boss != null)
+            {
+                StopThrown();
+                boss.TakeHit();
+                HitMarker.Create(hit.transform.position, false);
                 return;
             }
         }
@@ -87,6 +118,7 @@ public class WeaponPickup : MonoBehaviour
         Vector3 pos = transform.position;
         pos.y = groundY;
         transform.position = pos;
+        startPosition = pos;
     }
 
     public void SetThrown(Vector3 direction, float force)
@@ -124,6 +156,9 @@ public class WeaponPickup : MonoBehaviour
     {
         isEquipped = true;
         isThrown = false;
+
+        PickupEffect.CreateWeaponPickup(transform.position);
+        ScreenShake.Instance?.Shake(0.05f, 0.1f);
     }
 
     public void OnDropped(int currentAmmo)
@@ -131,7 +166,6 @@ public class WeaponPickup : MonoBehaviour
         isEquipped = false;
         pickupDelay = 0.5f;
 
-        // Save the ammo so it's not reset on pickup
         remainingAmmo = currentAmmo;
 
         if (col != null)
@@ -140,6 +174,7 @@ public class WeaponPickup : MonoBehaviour
         Vector3 pos = transform.position;
         pos.y = groundY;
         transform.position = pos;
+        startPosition = pos;
 
         if (rb != null)
         {
